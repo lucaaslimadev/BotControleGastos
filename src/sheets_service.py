@@ -5,6 +5,9 @@ import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 from datetime import datetime
 import logging
+import json
+import tempfile
+import os
 from .config import Config
 
 logger = logging.getLogger(__name__)
@@ -20,10 +23,21 @@ class SheetsService:
     def _initialize_connection(self):
         """Inicializa conexão com Google Sheets"""
         try:
-            creds = ServiceAccountCredentials.from_json_keyfile_name(
-                Config.CREDENTIALS_FILE, 
-                Config.GOOGLE_SHEETS_SCOPES
-            )
+            # Tentar usar credenciais da variável de ambiente primeiro
+            if Config.GOOGLE_CREDENTIALS:
+                # Credenciais via variável de ambiente (para deploy)
+                credentials_dict = json.loads(Config.GOOGLE_CREDENTIALS)
+                creds = ServiceAccountCredentials.from_json_keyfile_dict(
+                    credentials_dict, 
+                    Config.GOOGLE_SHEETS_SCOPES
+                )
+            else:
+                # Credenciais via arquivo (para desenvolvimento local)
+                creds = ServiceAccountCredentials.from_json_keyfile_name(
+                    Config.CREDENTIALS_FILE, 
+                    Config.GOOGLE_SHEETS_SCOPES
+                )
+            
             self.client = gspread.authorize(creds)
             self.sheet = self.client.open_by_key(Config.SHEET_ID).sheet1
             
