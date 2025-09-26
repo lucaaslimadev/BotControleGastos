@@ -251,6 +251,36 @@ def _processar_gasto(text, number):
         # Valor não identificado
         whatsapp_service.enviar_erro_valor(number)
 
+@app.route("/debug")
+def debug():
+    """Debug das configurações"""
+    import json
+    try:
+        creds_raw = Config.GOOGLE_CREDENTIALS
+        creds_exists = bool(creds_raw)
+        
+        if creds_raw:
+            try:
+                creds_parsed = json.loads(creds_raw)
+                creds_valid = "type" in creds_parsed
+            except Exception as e:
+                creds_parsed = str(e)
+                creds_valid = False
+        else:
+            creds_parsed = "Não encontrado"
+            creds_valid = False
+            
+        return {
+            "google_credentials_exists": creds_exists,
+            "google_credentials_valid": creds_valid,
+            "google_credentials_preview": str(creds_raw)[:100] if creds_raw else "None",
+            "sheet_id": Config.SHEET_ID,
+            "sheets_connected": sheets_service.is_connected(),
+            "error_preview": str(creds_parsed)[:200] if not creds_valid else "OK"
+        }
+    except Exception as e:
+        return {"error": str(e)}
+
 # Rotas de teste (apenas em desenvolvimento)
 if Config.FLASK_ENV == 'development':
     
