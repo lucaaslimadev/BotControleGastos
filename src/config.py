@@ -18,7 +18,7 @@ class Config:
     # Google Sheets
     SHEET_ID = os.getenv('SHEET_ID')
     CREDENTIALS_FILE = 'config/credentials.json'
-    GOOGLE_CREDENTIALS = os.getenv('GOOGLE_CREDENTIALS_JSON')  # JSON como string
+    GOOGLE_CREDENTIALS = os.getenv('CREDENCIAIS_DO_GOOGLE')  # JSON como string
     
     # Flask
     FLASK_ENV = os.getenv('FLASK_ENV', 'development')
