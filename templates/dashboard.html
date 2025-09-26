@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Controle de Gastos</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🤖</text></svg>">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>🤖 Dashboard - Controle de Gastos</h1>
+            <p class="subtitle">Acompanhe seus gastos de forma inteligente</p>
+        </header>
+        
+        <div class="stats-grid">
+            <div class="stat-card primary">
+                <div class="stat-icon">💰</div>
+                <div class="stat-content">
+                    <div class="stat-value">R$ {{ "%.2f"|format(gastos_mes_atual) }}</div>
+                    <div class="stat-label">Gasto este mês</div>
+                </div>
+            </div>
+            
+            <div class="stat-card secondary">
+                <div class="stat-icon">📊</div>
+                <div class="stat-content">
+                    <div class="stat-value">R$ {{ "%.2f"|format(total_geral) }}</div>
+                    <div class="stat-label">Total geral</div>
+                </div>
+            </div>
+            
+            <div class="stat-card tertiary">
+                <div class="stat-icon">📝</div>
+                <div class="stat-content">
+                    <div class="stat-value">{{ gastos|length }}</div>
+                    <div class="stat-label">Total de gastos</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="content-grid">
+            <div class="card">
+                <div class="card-header">
+                    <h2>📂 Gastos por Categoria</h2>
+                </div>
+                <div class="card-content">
+                    {% if gastos_por_categoria %}
+                        {% for categoria, valor in gastos_por_categoria.items() %}
+                        <div class="category-item">
+                            <div class="category-info">
+                                <span class="category-name">{{ categoria.title() }}</span>
+                                <div class="category-bar">
+                                    <div class="category-progress" style="width: {{ (valor / gastos_por_categoria.values()|max * 100)|round(1) }}%"></div>
+                                </div>
+                            </div>
+                            <span class="category-value">R$ {{ "%.2f"|format(valor) }}</span>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="empty-state">Nenhum gasto por categoria ainda.</p>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <h2>📋 Últimos Gastos</h2>
+                </div>
+                <div class="card-content">
+                    {% if gastos %}
+                        {% for gasto in gastos[-10:] %}
+                        <div class="expense-item">
+                            <div class="expense-info">
+                                <span class="expense-description">{{ gasto.get('Descrição', 'N/A') }}</span>
+                                <span class="expense-date">{{ gasto.get('Data', 'N/A') }}</span>
+                            </div>
+                            <div class="expense-details">
+                                <span class="expense-value">R$ {{ gasto.get('Valor', '0') }}</span>
+                                <span class="expense-category">{{ gasto.get('Categoria', 'outros').title() }}</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="empty-state">Nenhum gasto registrado ainda.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h2>🔗 Links Úteis</h2>
+            </div>
+            <div class="card-content">
+                <div class="links-grid">
+                    <a href="https://docs.google.com/spreadsheets/d/{{ sheet_id }}/edit" target="_blank" class="link-button primary">
+                        📊 Abrir Planilha Completa
+                    </a>
+                    <button onclick="location.reload()" class="link-button secondary">
+                        🔄 Atualizar Dashboard
+                    </button>
+                </div>
+                
+                <div class="commands-info">
+                    <h3>📱 Comandos WhatsApp</h3>
+                    <div class="commands-grid">
+                        <span class="command">saldo</span>
+                        <span class="command">hoje</span>
+                        <span class="command">exportar</span>
+                        <span class="command">deletar</span>
+                        <span class="command">ajuda</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <footer class="footer">
+            <p>🤖 Bot WhatsApp - Controle de Gastos | Última atualização: {{ moment().format('DD/MM/YYYY HH:mm') }}</p>
+        </footer>
+    </div>
+    
+    <script>
+        // Auto-refresh a cada 5 minutos
+        setTimeout(() => {
+            location.reload();
+        }, 300000);
+        
+        // Adicionar data/hora atual
+        document.addEventListener('DOMContentLoaded', function() {
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('pt-BR') + ' ' + now.toLocaleTimeString('pt-BR');
+            const footerText = document.querySelector('.footer p');
+            if (footerText) {
+                footerText.innerHTML = footerText.innerHTML.replace('{{ moment().format(\'DD/MM/YYYY HH:mm\') }}', dateStr);
+            }
+        });
+    </script>
+</body>
+</html>
