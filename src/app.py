@@ -59,24 +59,49 @@ def health_check():
 def dashboard():
     """Dashboard com estatísticas dos gastos"""
     try:
+        # Verificar conexão primeiro
+        if not sheets_service.is_connected():
+            return "<h1>❌ Google Sheets não conectado</h1><p>Verifique as credenciais e variáveis de ambiente.</p>", 500
+        
         # Obter dados
         gastos = sheets_service.obter_todos_gastos()
         gastos_por_categoria = sheets_service.obter_gastos_por_categoria()
         
         # Calcular estatísticas
-        total_geral = sum(gastos_por_categoria.values())
+        total_geral = sum(gastos_por_categoria.values()) if gastos_por_categoria else 0
         gastos_mes_atual = sheets_service.calcular_saldo_mes()
         
-        return render_template('dashboard.html',
-                             gastos=gastos,
-                             gastos_por_categoria=gastos_por_categoria,
-                             total_geral=total_geral,
-                             gastos_mes_atual=gastos_mes_atual,
-                             sheet_id=Config.SHEET_ID)
+        # Dashboard simples se não conseguir carregar template
+        try:
+            return render_template('dashboard.html',
+                                 gastos=gastos,
+                                 gastos_por_categoria=gastos_por_categoria,
+                                 total_geral=total_geral,
+                                 gastos_mes_atual=gastos_mes_atual,
+                                 sheet_id=Config.SHEET_ID)
+        except Exception as template_error:
+            # Dashboard HTML simples como fallback
+            return f"""
+            <html>
+            <head><title>Dashboard - Controle de Gastos</title></head>
+            <body style="font-family: Arial; padding: 20px;">
+                <h1>🤖 Dashboard - Controle de Gastos</h1>
+                <div style="background: #f0f0f0; padding: 15px; margin: 10px 0; border-radius: 5px;">
+                    <h3>💰 Gasto este mês: R$ {gastos_mes_atual:.2f}</h3>
+                    <h3>📊 Total geral: R$ {total_geral:.2f}</h3>
+                    <h3>📝 Total de gastos: {len(gastos)}</h3>
+                </div>
+                <h2>📋 Últimos Gastos</h2>
+                {''.join([f"<p>{gasto.get('Data', 'N/A')} - {gasto.get('Descrição', 'N/A')} - R$ {gasto.get('Valor', '0')}</p>" for gasto in gastos[-10:]])}
+                <p><a href="https://docs.google.com/spreadsheets/d/{Config.SHEET_ID}/edit" target="_blank">📊 Abrir Planilha Completa</a></p>
+                <p><strong>Erro no template:</strong> {template_error}</p>
+            </body>
+            </html>
+            """
     
     except Exception as e:
         logger.error(f"Erro no dashboard: {e}")
-        return f"Erro ao carregar dashboard: {e}", 500
+        return f"<h1>❌ Erro no Dashboard</h1><p>{str(e)}</p><p><a href='/health'>Verificar Health Check</a></p>", 500
 
 @app.route("/webhook", methods=["GET", "POST"])
 def webhook():
