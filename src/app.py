@@ -281,6 +281,22 @@ def debug():
     except Exception as e:
         return {"error": str(e)}
 
+@app.route("/reconnect")
+def reconnect_sheets():
+    """Força reconexão com Google Sheets"""
+    try:
+        sheets_service._initialize_connection()
+        return {
+            "success": True,
+            "connected": sheets_service.is_connected(),
+            "message": "Reconexão tentada"
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e)
+        }
+
 # Rotas de teste (apenas em desenvolvimento)
 if Config.FLASK_ENV == 'development':
     
