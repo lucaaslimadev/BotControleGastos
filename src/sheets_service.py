@@ -2,7 +2,7 @@
 Serviço para integração com Google Sheets
 """
 import gspread
-from oauth2client.service_account import ServiceAccountCredentials
+from google.oauth2.service_account import Credentials
 from datetime import datetime
 import logging
 import json
@@ -27,18 +27,15 @@ class SheetsService:
             if Config.GOOGLE_CREDENTIALS:
                 # Credenciais via variável de ambiente (para deploy)
                 credentials_dict = json.loads(Config.GOOGLE_CREDENTIALS)
-                # Corrigir quebras de linha na chave privada
-                if 'private_key' in credentials_dict:
-                    credentials_dict['private_key'] = credentials_dict['private_key'].replace('\\n', '\n')
-                creds = ServiceAccountCredentials.from_json_keyfile_dict(
+                creds = Credentials.from_service_account_info(
                     credentials_dict, 
-                    Config.GOOGLE_SHEETS_SCOPES
+                    scopes=Config.GOOGLE_SHEETS_SCOPES
                 )
             else:
                 # Credenciais via arquivo (para desenvolvimento local)
-                creds = ServiceAccountCredentials.from_json_keyfile_name(
+                creds = Credentials.from_service_account_file(
                     Config.CREDENTIALS_FILE, 
-                    Config.GOOGLE_SHEETS_SCOPES
+                    scopes=Config.GOOGLE_SHEETS_SCOPES
                 )
             
             self.client = gspread.authorize(creds)
