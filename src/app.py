@@ -295,6 +295,10 @@ def reconnect_sheets():
         
         creds_dict = json.loads(creds_raw)
         
+        # Corrigir quebras de linha na chave privada
+        if 'private_key' in creds_dict:
+            creds_dict['private_key'] = creds_dict['private_key'].replace('\\n', '\n')
+        
         # Tentar conectar
         from oauth2client.service_account import ServiceAccountCredentials
         import gspread

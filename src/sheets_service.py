@@ -27,6 +27,9 @@ class SheetsService:
             if Config.GOOGLE_CREDENTIALS:
                 # Credenciais via variável de ambiente (para deploy)
                 credentials_dict = json.loads(Config.GOOGLE_CREDENTIALS)
+                # Corrigir quebras de linha na chave privada
+                if 'private_key' in credentials_dict:
+                    credentials_dict['private_key'] = credentials_dict['private_key'].replace('\\n', '\n')
                 creds = ServiceAccountCredentials.from_json_keyfile_dict(
                     credentials_dict, 
                     Config.GOOGLE_SHEETS_SCOPES
