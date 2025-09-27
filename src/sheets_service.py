@@ -212,3 +212,36 @@ class SheetsService:
                 continue
         
         return gastos_por_categoria
+    
+    def obter_produtos_mais_gastos(self, limite=10):
+        """
+        Obtém os produtos/descrições com maiores gastos
+        
+        Args:
+            limite (int): Número máximo de produtos a retornar
+            
+        Returns:
+            dict: Produtos ordenados por valor gasto
+        """
+        gastos = self.obter_todos_gastos()
+        produtos_gastos = {}
+        
+        for gasto in gastos:
+            descricao = gasto.get('Descrição', '').lower().strip()
+            if not descricao:
+                continue
+                
+            valor_str = str(gasto.get('Valor', '0')).replace(',', '.')
+            
+            try:
+                valor = float(valor_str)
+                if descricao in produtos_gastos:
+                    produtos_gastos[descricao] += valor
+                else:
+                    produtos_gastos[descricao] = valor
+            except ValueError:
+                continue
+        
+        # Ordenar por valor e retornar os top N
+        produtos_ordenados = dict(sorted(produtos_gastos.items(), key=lambda x: x[1], reverse=True)[:limite])
+        return produtos_ordenados

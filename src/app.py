@@ -66,6 +66,7 @@ def dashboard():
         # Obter dados
         gastos = sheets_service.obter_todos_gastos()
         gastos_por_categoria = sheets_service.obter_gastos_por_categoria()
+        produtos_mais_gastos = sheets_service.obter_produtos_mais_gastos(8)
         
         # Calcular estatísticas
         total_geral = sum(gastos_por_categoria.values()) if gastos_por_categoria else 0
@@ -76,6 +77,7 @@ def dashboard():
             return render_template('dashboard.html',
                                  gastos=gastos,
                                  gastos_por_categoria=gastos_por_categoria,
+                                 produtos_mais_gastos=produtos_mais_gastos,
                                  total_geral=total_geral,
                                  gastos_mes_atual=gastos_mes_atual,
                                  sheet_id=Config.SHEET_ID)
