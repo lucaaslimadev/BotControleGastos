@@ -284,17 +284,44 @@ def debug():
 @app.route("/reconnect")
 def reconnect_sheets():
     """Força reconexão com Google Sheets"""
+    import json
+    import traceback
+    
     try:
-        sheets_service._initialize_connection()
+        # Testar credenciais primeiro
+        creds_raw = Config.GOOGLE_CREDENTIALS
+        if not creds_raw:
+            return {"success": False, "error": "CREDENCIAIS_DO_GOOGLE não encontrada"}
+        
+        creds_dict = json.loads(creds_raw)
+        
+        # Tentar conectar
+        from oauth2client.service_account import ServiceAccountCredentials
+        import gspread
+        
+        creds = ServiceAccountCredentials.from_json_keyfile_dict(
+            creds_dict, 
+            Config.GOOGLE_SHEETS_SCOPES
+        )
+        
+        client = gspread.authorize(creds)
+        sheet = client.open_by_key(Config.SHEET_ID).sheet1
+        
+        # Testar acesso
+        headers = sheet.row_values(1)
+        
         return {
             "success": True,
-            "connected": sheets_service.is_connected(),
-            "message": "Reconexão tentada"
+            "connected": True,
+            "headers": headers,
+            "message": "Conexão bem-sucedida!"
         }
+        
     except Exception as e:
         return {
             "success": False,
-            "error": str(e)
+            "error": str(e),
+            "traceback": traceback.format_exc()[-500:]
         }
 
 # Rotas de teste (apenas em desenvolvimento)
