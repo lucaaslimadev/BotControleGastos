@@ -1,6 +1,8 @@
-# Arquivos de ambiente e credenciais
+# Environment variables
 .env
-credentials.json
+
+# Google Credentials
+config/credentials.json
 
 # Python
 __pycache__/
@@ -35,9 +37,18 @@ ENV/
 *.swp
 *.swo
 
-# Logs
-*.log
-
 # OS
 .DS_Store
 Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Config files
+bot_config.json
+dashboard_config.json
+
+# Temporary files
+*.tmp
+*.temp

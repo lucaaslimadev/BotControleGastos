@@ -1,5 +1,5 @@
 """
-Configurações da aplicação
+Configurações da aplicação - Telegram Bot
 """
 import os
 from dotenv import load_dotenv
@@ -10,25 +10,13 @@ load_dotenv()
 class Config:
     """Configurações base da aplicação"""
     
-    # WhatsApp Business API
-    WHATSAPP_TOKEN = os.getenv('WHATSAPP_TOKEN')
-    PHONE_NUMBER_ID = os.getenv('PHONE_NUMBER_ID')
-    VERIFY_TOKEN = os.getenv('VERIFY_TOKEN')
+    # Telegram Bot
+    TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
     
     # Google Sheets
     SHEET_ID = os.getenv('SHEET_ID')
     CREDENTIALS_FILE = 'config/credentials.json'
     GOOGLE_CREDENTIALS = os.getenv('CREDENCIAIS_DO_GOOGLE')  # JSON como string
-    
-    # Flask
-    FLASK_ENV = os.getenv('FLASK_ENV', 'development')
-    FLASK_DEBUG = os.getenv('FLASK_DEBUG', 'True').lower() == 'true'
-    PORT = int(os.getenv('PORT', 8000))
-    HOST = '0.0.0.0'
-    
-    # Para produção, desabilitar debug
-    if FLASK_ENV == 'production':
-        FLASK_DEBUG = False
     
     # Google Sheets Scopes
     GOOGLE_SHEETS_SCOPES = [
@@ -40,19 +28,10 @@ class Config:
     @classmethod
     def validate(cls):
         """Valida se todas as configurações obrigatórias estão definidas"""
-        required_configs = [
-            'WHATSAPP_TOKEN',
-            'PHONE_NUMBER_ID',
-            'VERIFY_TOKEN',
-            'SHEET_ID'
-        ]
+        if not cls.TELEGRAM_TOKEN:
+            raise ValueError("TELEGRAM_TOKEN não definido no .env")
         
-        missing_configs = []
-        for config in required_configs:
-            if not getattr(cls, config):
-                missing_configs.append(config)
-        
-        if missing_configs:
-            raise ValueError(f"Configurações obrigatórias não definidas: {', '.join(missing_configs)}")
+        if not cls.SHEET_ID:
+            raise ValueError("SHEET_ID não definido no .env")
         
         return True

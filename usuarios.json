@@ -1,0 +1,14 @@
+{
+  "usuarios_autorizados": [
+    {
+      "chat_id": 8077221512,
+      "nome": "Lucas",
+      "ativo": true,
+      "admin": true
+    }
+  ],
+  "configuracoes": {
+    "permitir_novos_usuarios": false,
+    "requer_aprovacao": true
+  }
+}
