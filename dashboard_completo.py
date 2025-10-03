@@ -587,8 +587,23 @@ def dashboard():
 def complete_data():
     """API completa com todas as análises"""
     if not sheet:
-        # Retornar dados de exemplo se não conectar
-        return jsonify({
+        # Tentar reconectar uma vez
+        try:
+            creds_json = os.getenv('GOOGLE_CREDENTIALS')
+            if creds_json:
+                import json
+                creds_info = json.loads(creds_json)
+                creds = Credentials.from_service_account_info(creds_info,
+                    scopes=["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"])
+                gc = gspread.authorize(creds)
+                sheet = gc.open_by_key(SHEET_ID).sheet1
+                print("✅ Reconectado com Google Sheets")
+            else:
+                raise Exception("GOOGLE_CREDENTIALS não encontrado")
+        except Exception as e:
+            print(f"❌ Falha na reconexão: {e}")
+            # Retornar dados de exemplo se não conectar
+            return jsonify({
             'gastoAtual': 1250.50,
             'mediaMovel': 1100.30,
             'projecao': 1400.00,
