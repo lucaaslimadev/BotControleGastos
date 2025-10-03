@@ -1,1 +1,1 @@
-# Bot WhatsApp - Controle de Gastos
+# Bot Telegram - Controle de Gastos

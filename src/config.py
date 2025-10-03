@@ -16,7 +16,7 @@ class Config:
     # Google Sheets
     SHEET_ID = os.getenv('SHEET_ID')
     CREDENTIALS_FILE = 'config/credentials.json'
-    GOOGLE_CREDENTIALS = os.getenv('CREDENCIAIS_DO_GOOGLE')  # JSON como string
+    GOOGLE_CREDENTIALS = os.getenv('GOOGLE_CREDENTIALS')  # JSON como string
     
     # Google Sheets Scopes
     GOOGLE_SHEETS_SCOPES = [
