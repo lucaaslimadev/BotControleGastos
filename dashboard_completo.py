@@ -16,11 +16,8 @@ load_dotenv()
 app = Flask(__name__)
 
 # Conectar Google Sheets
-SHEET_ID = os.getenv('SHEET_ID')
+SHEET_ID = os.getenv('SHEET_ID', '15fe9HZQ0m8i5HOkCpk6Es4s-jTjtJ4djdtrVsONW2ro')
 PORT = int(os.getenv('PORT', 8000))
-
-if not SHEET_ID:
-    raise ValueError('SHEET_ID deve estar configurado no .env')
 
 try:
     # Tentar arquivo local primeiro (desenvolvimento)

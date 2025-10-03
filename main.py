@@ -23,19 +23,22 @@ def home():
     from dashboard_completo import dashboard
     return dashboard()
 
-# Importar todas as rotas do dashboard
-from dashboard_completo import app as dashboard_app
-for rule in dashboard_app.url_map.iter_rules():
-    if rule.endpoint not in ['static', 'health']:
-        try:
-            app.add_url_rule(
-                rule.rule, 
-                f"dashboard_{rule.endpoint}",
-                dashboard_app.view_functions[rule.endpoint],
-                methods=list(rule.methods)
-            )
-        except:
-            pass
+# Importar rotas do dashboard de forma segura
+try:
+    from dashboard_completo import app as dashboard_app
+    for rule in dashboard_app.url_map.iter_rules():
+        if rule.endpoint not in ['static', 'health']:
+            try:
+                app.add_url_rule(
+                    rule.rule, 
+                    f"dashboard_{rule.endpoint}",
+                    dashboard_app.view_functions[rule.endpoint],
+                    methods=list(rule.methods)
+                )
+            except:
+                pass
+except Exception as e:
+    print(f"Aviso: Dashboard não carregado - {e}")
 
 def run_bot():
     """Executa o bot completo"""
