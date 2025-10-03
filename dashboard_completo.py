@@ -541,7 +541,7 @@ def dashboard():
                 // Gráfico Top 5 Gastos
                 const ctx4 = document.getElementById('topGastosChart').getContext('2d');
                 new Chart(ctx4, {
-                    type: 'horizontalBar',
+                    type: 'bar',
                     data: {
                         labels: currentData.topGastos.labels,
                         datasets: [{
@@ -552,6 +552,7 @@ def dashboard():
                     },
                     options: { 
                         responsive: true, 
+                        indexAxis: 'y',
                         scales: { x: { beginAtZero: true } },
                         plugins: { legend: { display: false } }
                     }
