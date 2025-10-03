@@ -23,8 +23,20 @@ if not SHEET_ID:
     raise ValueError('SHEET_ID deve estar configurado no .env')
 
 try:
-    creds = Credentials.from_service_account_file('config/credentials.json', 
-        scopes=["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"])
+    # Tentar arquivo local primeiro (desenvolvimento)
+    if os.path.exists('config/credentials.json'):
+        creds = Credentials.from_service_account_file('config/credentials.json', 
+            scopes=["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"])
+    else:
+        # Usar variável de ambiente (produção)
+        import json
+        creds_json = os.getenv('GOOGLE_CREDENTIALS')
+        if not creds_json:
+            raise ValueError('GOOGLE_CREDENTIALS não configurado')
+        creds_info = json.loads(creds_json)
+        creds = Credentials.from_service_account_info(creds_info,
+            scopes=["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"])
+    
     gc = gspread.authorize(creds)
     sheet = gc.open_by_key(SHEET_ID).sheet1
     print("✅ Dashboard Completo conectado")
