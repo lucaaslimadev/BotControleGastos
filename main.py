@@ -43,7 +43,13 @@ except Exception as e:
 def run_bot():
     """Executa o bot completo"""
     time.sleep(5)  # Aguarda Flask iniciar
-    exec(open('bot_completo.py').read())
+    import subprocess
+    import sys
+    try:
+        subprocess.Popen([sys.executable, 'bot_completo.py'])
+        print("✅ Bot iniciado com sucesso")
+    except Exception as e:
+        print(f"❌ Erro ao iniciar bot: {e}")
 
 if __name__ == "__main__":
     print(f"🚀 Iniciando na porta {PORT}")

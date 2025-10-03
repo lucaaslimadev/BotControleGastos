@@ -15,36 +15,40 @@ load_dotenv()
 
 app = Flask(__name__)
 
-# Conectar Google Sheets
-SHEET_ID = os.getenv('SHEET_ID', '15fe9HZQ0m8i5HOkCpk6Es4s-jTjtJ4djdtrVsONW2ro')
-PORT = int(os.getenv('PORT', 8000))
+# Conectar Google Sheets - FORÇAR LEITURA DAS VARIÁVEIS
+SHEET_ID = os.environ.get('SHEET_ID')  # Usar environ em vez de getenv
+PORT = int(os.environ.get('PORT', 8000))
+GOOGLE_CREDENTIALS = os.environ.get('GOOGLE_CREDENTIALS')
+
+# Debug das variáveis
+print(f"🔍 SHEET_ID: {SHEET_ID[:10] + '...' if SHEET_ID else 'NÃO DEFINIDO'}")
+print(f"🔍 PORT: {PORT}")
+print(f"🔍 GOOGLE_CREDENTIALS: {'✅ Definido (' + str(len(GOOGLE_CREDENTIALS)) + ' chars)' if GOOGLE_CREDENTIALS else '❌ Não definido'}")
 
 try:
-    print(f"🔍 Debug - SHEET_ID: {SHEET_ID[:10]}...")
-    print(f"🔍 Debug - GOOGLE_CREDENTIALS existe: {bool(os.getenv('GOOGLE_CREDENTIALS'))}")
+    if not SHEET_ID:
+        raise ValueError('SHEET_ID não configurado no Railway')
     
-    # Tentar arquivo local primeiro (desenvolvimento)
-    if os.path.exists('config/credentials.json'):
-        print("📁 Usando arquivo local credentials.json")
-        creds = Credentials.from_service_account_file('config/credentials.json', 
-            scopes=["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"])
-    else:
-        # Usar variável de ambiente (produção)
-        print("🌐 Usando variável de ambiente GOOGLE_CREDENTIALS")
-        import json
-        creds_json = os.getenv('GOOGLE_CREDENTIALS')
-        if not creds_json:
-            raise ValueError('GOOGLE_CREDENTIALS não configurado')
-        creds_info = json.loads(creds_json)
-        creds = Credentials.from_service_account_info(creds_info,
-            scopes=["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"])
+    if not GOOGLE_CREDENTIALS:
+        raise ValueError('GOOGLE_CREDENTIALS não configurado no Railway')
+    
+    print("🌐 Conectando com Google Sheets...")
+    print(f"📊 Credenciais: {len(GOOGLE_CREDENTIALS)} caracteres")
+    
+    creds_info = json.loads(GOOGLE_CREDENTIALS)
+    creds = Credentials.from_service_account_info(creds_info,
+        scopes=["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"])
     
     gc = gspread.authorize(creds)
     sheet = gc.open_by_key(SHEET_ID).sheet1
-    print("✅ Dashboard Completo conectado com Google Sheets")
+    
+    # Testar conexão
+    test_records = sheet.get_all_records()
+    print(f"✅ Dashboard conectado! {len(test_records)} registros encontrados")
+    
 except Exception as e:
-    print(f"❌ Erro ao conectar Google Sheets: {e}")
-    print("📊 Usando dados de exemplo no dashboard")
+    print(f"❌ ERRO CRÍTICO: {e}")
+    print(f"❌ Variáveis: SHEET_ID={bool(SHEET_ID)}, CREDENTIALS={bool(GOOGLE_CREDENTIALS)}")
     sheet = None
 
 # Configurações (simulando banco de dados)
@@ -64,6 +68,17 @@ def save_config(config):
 @app.route("/health")
 def health_check():
     return {"status": "ok", "service": "running"}
+
+@app.route("/debug")
+def debug_vars():
+    """Debug das variáveis de ambiente"""
+    return {
+        "SHEET_ID": SHEET_ID[:10] + "..." if SHEET_ID else "NÃO DEFINIDO",
+        "GOOGLE_CREDENTIALS": "DEFINIDO" if os.getenv('GOOGLE_CREDENTIALS') else "NÃO DEFINIDO",
+        "TELEGRAM_TOKEN": "DEFINIDO" if os.getenv('TELEGRAM_TOKEN') else "NÃO DEFINIDO",
+        "PORT": PORT,
+        "sheet_connected": sheet is not None
+    }
 
 @app.route("/")
 def dashboard():
@@ -287,6 +302,12 @@ def dashboard():
             <div class="header">
                 <h1>💰 Dashboard Financeiro Completo</h1>
                 <p>Controle total dos seus gastos com análises avançadas</p>
+                <div style="background: rgba(255,255,255,0.2); padding: 10px; border-radius: 10px; margin-top: 10px; font-size: 0.9rem;">
+                    <div>🔍 Debug Info:</div>
+                    <div>Sheet Connected: """ + str(sheet is not None) + """</div>
+                    <div>Sheet ID: """ + (SHEET_ID[:10] + "..." if SHEET_ID else "NOT FOUND") + """</div>
+                    <div>Credentials: """ + ("OK" if os.getenv('GOOGLE_CREDENTIALS') else "NOT FOUND") + """</div>
+                </div>
             </div>
             
             <div class="controls">
@@ -588,62 +609,46 @@ def complete_data():
     """API completa com todas as análises"""
     global sheet
     
-    # Sempre tentar conectar se não estiver conectado
+    print("🔄 Iniciando complete_data...")
+    
+    # Sempre tentar conectar
     try:
-        if not sheet:
-            creds_json = os.getenv('GOOGLE_CREDENTIALS')
-            if creds_json:
-                import json
-                creds_info = json.loads(creds_json)
-                creds = Credentials.from_service_account_info(creds_info,
-                    scopes=["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"])
-                gc = gspread.authorize(creds)
-                sheet = gc.open_by_key(SHEET_ID).sheet1
-                print("✅ Conectado com Google Sheets na API")
+        print("🔍 Forçando reconexão...")
+        
+        if not GOOGLE_CREDENTIALS:
+            raise ValueError('GOOGLE_CREDENTIALS não encontrado')
+        
+        if not SHEET_ID:
+            raise ValueError('SHEET_ID não encontrado')
+        
+        print(f"📊 SHEET_ID: {SHEET_ID[:10]}...")
+        print(f"🔑 CREDENTIALS: {len(GOOGLE_CREDENTIALS)} chars")
+        
+        creds_info = json.loads(GOOGLE_CREDENTIALS)
+        creds = Credentials.from_service_account_info(creds_info,
+            scopes=["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"])
+        gc = gspread.authorize(creds)
+        sheet = gc.open_by_key(SHEET_ID).sheet1
+        print("✅ Reconectado com Google Sheets na API")
+        
+        # Testar se consegue ler dados
+        test_data = sheet.get_all_records()
+        print(f"📋 Dados encontrados: {len(test_data)} registros")
+        
     except Exception as e:
-        print(f"❌ Erro ao conectar: {e}")
-        sheet = None
-    
-    # Se não conseguiu conectar, retornar dados de exemplo
-    if not sheet:
-        return jsonify({
-            'gastoAtual': 1250.50,
-            'mediaMovel': 1100.30,
-            'projecao': 1400.00,
-            'economiaPossivel': 187.58,
-            'categorias': {
-                'Alimentação': 450.30,
-                'Transporte': 320.15,
-                'Saúde': 180.00,
-                'Lazer': 200.50,
-                'Casa': 99.55
-            },
-            'evolucaoMensal': {
-                'labels': ['Nov/23', 'Dez/23', 'Jan/24', 'Fev/24', 'Mar/24'],
-                'values': [1000.00, 1200.50, 950.75, 1300.20, 1250.50]
-            },
-            'gastosPorDia': [120.50, 180.30, 200.15, 190.80, 220.40, 350.60, 280.90],
-            'tendencia': {
-                'labels': ['01/12', '02/12', '03/12', '04/12', '05/12'],
-                'gastos': [85.50, 120.30, 95.80, 180.20, 110.40],
-                'media': [85.50, 102.90, 100.53, 120.45, 118.44]
-            },
-            'insights': {
-                'categoriaCresceu': 'Alimentação é sua maior categoria de gastos',
-                'diaCaro': 'Sábado, 15/12/2024 - R$ 350.60',
-                'dicaEconomia': 'Reduza 15% dos gastos em Alimentação e economize R$ 67.55',
-                'padraoGastos': 'Você gasta mais nas Sextas. Planeje atividades mais econômicas neste dia.'
-            },
-            'planilhaLink': f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/edit",
-            'changeAtual': 12.5,
-            'changeMedia': -2.3,
-            'changeProjecao': 8.7,
-            'changeEconomia': 15.0
-        })
+        print(f"❌ ERRO CRÍTICO ao conectar: {e}")
+        print(f"❌ Tipo do erro: {type(e).__name__}")
+        import traceback
+        print(f"❌ Traceback: {traceback.format_exc()}")
+        
+        # Forçar erro para identificar o problema
+        return jsonify({'error': f'ERRO: {str(e)}'}), 500
     
     try:
+        print("📊 Processando dados reais...")
         periodo = request.args.get('periodo', 'atual')
         gastos = sheet.get_all_records()
+        print(f"📋 Total de gastos na planilha: {len(gastos)}")
         config = load_config()
         
         # Análises por período
