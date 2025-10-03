@@ -613,51 +613,15 @@ def dashboard():
 @app.route("/api/complete-data")
 def complete_data():
     """API completa com todas as análises"""
-    print("🔄 Usando SheetsService do bot...")
+    global sheet
     
-    if not sheets_service.is_connected():
-        return jsonify({'error': 'SheetsService não conectado'}), 500
-    
-    print("🔄 Iniciando complete_data...")
-    
-    # Sempre tentar conectar
-    try:
-        print("🔍 Forçando reconexão...")
-        
-        if not GOOGLE_CREDENTIALS:
-            raise ValueError('GOOGLE_CREDENTIALS não encontrado')
-        
-        if not SHEET_ID:
-            raise ValueError('SHEET_ID não encontrado')
-        
-        print(f"📊 SHEET_ID: {SHEET_ID[:10]}...")
-        print(f"🔑 CREDENTIALS: {len(GOOGLE_CREDENTIALS)} chars")
-        
-        creds_info = json.loads(GOOGLE_CREDENTIALS)
-        creds = Credentials.from_service_account_info(creds_info,
-            scopes=["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"])
-        gc = gspread.authorize(creds)
-        sheet = gc.open_by_key(SHEET_ID).sheet1
-        print("✅ Reconectado com Google Sheets na API")
-        
-        # Testar se consegue ler dados
-        test_data = sheet.get_all_records()
-        print(f"📋 Dados encontrados: {len(test_data)} registros")
-        
-    except Exception as e:
-        print(f"❌ ERRO CRÍTICO ao conectar: {e}")
-        print(f"❌ Tipo do erro: {type(e).__name__}")
-        import traceback
-        print(f"❌ Traceback: {traceback.format_exc()}")
-        
-        # Forçar erro para identificar o problema
-        return jsonify({'error': f'ERRO: {str(e)}'}), 500
+    if not sheet:
+        return jsonify({'error': 'Google Sheets não conectado'}), 500
     
     try:
-        print("📊 Processando dados reais...")
         periodo = request.args.get('periodo', 'atual')
         gastos = sheet.get_all_records()
-        print(f"📋 Total de gastos na planilha: {len(gastos)}")
+        print(f"📋 Total de gastos: {len(gastos)}")
         config = load_config()
         
         # Análises por período
