@@ -380,16 +380,16 @@ def dashboard():
                         <canvas id="categoryChart"></canvas>
                     </div>
                     <div class="chart-card">
-                        <div class="chart-title">📈 Evolução Últimos 12 Meses</div>
-                        <canvas id="monthlyChart"></canvas>
+                        <div class="chart-title">📅 Gastos por Semana do Mês</div>
+                        <canvas id="weeklyChart"></canvas>
                     </div>
                     <div class="chart-card">
                         <div class="chart-title">📅 Gastos por Dia da Semana</div>
                         <canvas id="weekdayChart"></canvas>
                     </div>
                     <div class="chart-card">
-                        <div class="chart-title">📉 Tendência e Média Móvel</div>
-                        <canvas id="trendChart"></canvas>
+                        <div class="chart-title">🏆 Top 5 Maiores Gastos</div>
+                        <canvas id="topGastosChart"></canvas>
                     </div>
                 </div>
                 
@@ -508,19 +508,16 @@ def dashboard():
                     options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
                 });
                 
-                // Gráfico mensal
-                const ctx2 = document.getElementById('monthlyChart').getContext('2d');
+                // Gráfico semanal
+                const ctx2 = document.getElementById('weeklyChart').getContext('2d');
                 new Chart(ctx2, {
-                    type: 'line',
+                    type: 'bar',
                     data: {
-                        labels: currentData.evolucaoMensal.labels,
+                        labels: currentData.gastosPorSemana.labels,
                         datasets: [{
-                            label: 'Gastos Mensais',
-                            data: currentData.evolucaoMensal.values,
-                            borderColor: '#667eea',
-                            backgroundColor: 'rgba(102, 126, 234, 0.1)',
-                            tension: 0.4,
-                            fill: true
+                            label: 'Gastos por Semana',
+                            data: currentData.gastosPorSemana.values,
+                            backgroundColor: 'rgba(102, 126, 234, 0.8)'
                         }]
                     },
                     options: { responsive: true, scales: { y: { beginAtZero: true } } }
@@ -541,25 +538,23 @@ def dashboard():
                     options: { responsive: true, scales: { y: { beginAtZero: true } } }
                 });
                 
-                // Gráfico de tendência
-                const ctx4 = document.getElementById('trendChart').getContext('2d');
+                // Gráfico Top 5 Gastos
+                const ctx4 = document.getElementById('topGastosChart').getContext('2d');
                 new Chart(ctx4, {
-                    type: 'line',
+                    type: 'horizontalBar',
                     data: {
-                        labels: currentData.tendencia.labels,
+                        labels: currentData.topGastos.labels,
                         datasets: [{
-                            label: 'Gastos',
-                            data: currentData.tendencia.gastos,
-                            borderColor: '#667eea',
-                            backgroundColor: 'rgba(102, 126, 234, 0.1)'
-                        }, {
-                            label: 'Média Móvel',
-                            data: currentData.tendencia.media,
-                            borderColor: '#ff6b6b',
-                            borderDash: [5, 5]
+                            label: 'Valor (R$)',
+                            data: currentData.topGastos.values,
+                            backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF']
                         }]
                     },
-                    options: { responsive: true, scales: { y: { beginAtZero: true } } }
+                    options: { 
+                        responsive: true, 
+                        scales: { x: { beginAtZero: true } },
+                        plugins: { legend: { display: false } }
+                    }
                 });
             }
             
@@ -663,8 +658,11 @@ def complete_data():
         # Gastos por dia da semana
         gastos_por_dia = calcular_gastos_por_dia_semana(gastos_periodo)
         
-        # Tendência
-        tendencia = calcular_tendencia(gastos)
+        # Gastos por semana do mês
+        gastos_por_semana = calcular_gastos_por_semana_mes(gastos_periodo)
+        
+        # Top 5 maiores gastos
+        top_gastos = calcular_top_gastos(gastos_periodo, 5)
         
         # Insights
         insights = gerar_insights(gastos, gastos_periodo, categorias)
@@ -678,9 +676,9 @@ def complete_data():
             'ultimos7Dias': ultimos_7_dias,
             'maiorGasto': maior_gasto,
             'categorias': categorias,
-            'evolucaoMensal': evolucao_mensal,
             'gastosPorDia': gastos_por_dia,
-            'tendencia': tendencia,
+            'gastosPorSemana': gastos_por_semana,
+            'topGastos': top_gastos,
             'insights': insights,
             'planilhaLink': f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/edit",
             'changeAtual': changes['atual'],
@@ -854,6 +852,69 @@ def calcular_ultimos_7_dias(gastos):
         total_7_dias += sum(float(str(g.get('Valor', '0')).replace(',', '.')) for g in gastos_dia)
     
     return total_7_dias
+
+def calcular_gastos_por_semana_mes(gastos_periodo):
+    """Calcula gastos por semana do mês atual"""
+    hoje = datetime.now()
+    primeiro_dia = hoje.replace(day=1)
+    
+    # Dividir o mês em 4 semanas
+    semanas = {
+        'Semana 1 (1-7)': 0,
+        'Semana 2 (8-14)': 0,
+        'Semana 3 (15-21)': 0,
+        'Semana 4 (22+)': 0
+    }
+    
+    for gasto in gastos_periodo:
+        try:
+            data_str = gasto.get('Data', '')
+            if '/' in data_str:
+                data = datetime.strptime(data_str, '%d/%m/%Y')
+                dia = data.day
+                valor = float(str(gasto.get('Valor', '0')).replace(',', '.'))
+                
+                if 1 <= dia <= 7:
+                    semanas['Semana 1 (1-7)'] += valor
+                elif 8 <= dia <= 14:
+                    semanas['Semana 2 (8-14)'] += valor
+                elif 15 <= dia <= 21:
+                    semanas['Semana 3 (15-21)'] += valor
+                else:
+                    semanas['Semana 4 (22+)'] += valor
+        except:
+            continue
+    
+    return {
+        'labels': list(semanas.keys()),
+        'values': list(semanas.values())
+    }
+
+def calcular_top_gastos(gastos_periodo, limite=5):
+    """Calcula os maiores gastos individuais"""
+    gastos_ordenados = []
+    
+    for gasto in gastos_periodo:
+        try:
+            descricao = gasto.get('Descrição', 'N/A')[:20]
+            valor = float(str(gasto.get('Valor', '0')).replace(',', '.'))
+            data = gasto.get('Data', '')
+            
+            gastos_ordenados.append({
+                'descricao': f"{descricao} ({data})",
+                'valor': valor
+            })
+        except:
+            continue
+    
+    # Ordenar por valor e pegar os top N
+    gastos_ordenados.sort(key=lambda x: x['valor'], reverse=True)
+    top_gastos = gastos_ordenados[:limite]
+    
+    return {
+        'labels': [g['descricao'] for g in top_gastos],
+        'values': [g['valor'] for g in top_gastos]
+    }
 
 def calcular_mudancas_novas(gastos, gasto_atual, restante_meta, ultimos_7_dias, maior_gasto):
     """Calcula mudanças percentuais com as novas métricas"""
