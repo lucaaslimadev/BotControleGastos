@@ -58,6 +58,10 @@ def save_config(config):
     with open(CONFIG_FILE, 'w') as f:
         json.dump(config, f)
 
+@app.route("/health")
+def health_check():
+    return {"status": "ok", "service": "running"}
+
 @app.route("/")
 def dashboard():
     return """
@@ -923,20 +927,27 @@ def backup():
     except Exception as e:
         return f"Erro ao gerar backup: {str(e)}"
 
+def start_bot_background():
+    """Inicia o bot em background"""
+    import subprocess
+    import sys
+    try:
+        subprocess.Popen([sys.executable, 'bot_completo.py'])
+        print("✅ Bot iniciado em background")
+    except Exception as e:
+        print(f"❌ Erro ao iniciar bot: {e}")
+
 if __name__ == "__main__":
     print(f"🌐 Dashboard iniciando em http://localhost:{PORT}")
     
-    # Iniciar bot em thread separada para Railway
-    import threading
-    import subprocess
-    import sys
-    
-    def start_bot():
-        subprocess.run([sys.executable, 'bot_completo.py'])
-    
     # Iniciar bot em background
-    bot_thread = threading.Thread(target=start_bot, daemon=True)
+    import threading
+    bot_thread = threading.Thread(target=start_bot_background, daemon=True)
     bot_thread.start()
+    
+    # Aguardar um pouco para o bot iniciar
+    import time
+    time.sleep(2)
     
     # Iniciar dashboard
     app.run(host='0.0.0.0', port=PORT, debug=False)
