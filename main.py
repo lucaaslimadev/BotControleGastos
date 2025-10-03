@@ -19,12 +19,23 @@ def health():
 
 @app.route('/')
 def home():
-    return """
-    <h1>🤖 Bot Controle de Gastos</h1>
-    <p>✅ Sistema funcionando!</p>
-    <p>✅ Bot Telegram ativo</p>
-    <p>✅ Dashboard disponível</p>
-    """
+    # Importar e retornar o dashboard completo
+    from dashboard_completo import dashboard
+    return dashboard()
+
+# Importar todas as rotas do dashboard
+from dashboard_completo import app as dashboard_app
+for rule in dashboard_app.url_map.iter_rules():
+    if rule.endpoint not in ['static', 'health']:
+        try:
+            app.add_url_rule(
+                rule.rule, 
+                f"dashboard_{rule.endpoint}",
+                dashboard_app.view_functions[rule.endpoint],
+                methods=list(rule.methods)
+            )
+        except:
+            pass
 
 def run_bot():
     """Executa o bot completo"""
