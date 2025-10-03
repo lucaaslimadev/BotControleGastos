@@ -24,6 +24,7 @@ GOOGLE_CREDENTIALS = os.environ.get('GOOGLE_CREDENTIALS')
 print(f"🔍 SHEET_ID: {SHEET_ID[:10] + '...' if SHEET_ID else 'NÃO DEFINIDO'}")
 print(f"🔍 PORT: {PORT}")
 print(f"🔍 GOOGLE_CREDENTIALS: {'✅ Definido (' + str(len(GOOGLE_CREDENTIALS)) + ' chars)' if GOOGLE_CREDENTIALS else '❌ Não definido'}")
+print("🚀 Forçando deploy...")
 
 try:
     if not SHEET_ID:
@@ -49,6 +50,7 @@ try:
 except Exception as e:
     print(f"❌ ERRO CRÍTICO: {e}")
     print(f"❌ Variáveis: SHEET_ID={bool(SHEET_ID)}, CREDENTIALS={bool(GOOGLE_CREDENTIALS)}")
+    print("❌ DEPLOY ATIVO - VERIFICANDO VARIÁVEIS")
     sheet = None
 
 # Configurações (simulando banco de dados)
