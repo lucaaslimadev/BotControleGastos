@@ -1,8 +1,21 @@
 # Environment variables
 .env
+.env.local
+.env.production
 
 # Google Credentials
 config/credentials.json
+
+# Arquivos de teste com credenciais
+bot_final.py
+bot_final_simples.py
+bot_funcional.py
+bot_simples.py
+bot_simples_funcional.py
+bot_ultra_simples.py
+teste_direto.py
+bot_*_test.py
+teste_*.py
 
 # Python
 __pycache__/
