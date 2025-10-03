@@ -127,7 +127,7 @@ cp .env.example .env
 **Arquivo `.env`**:
 ```env
 # Telegram Configuration
-TELEGRAM_TOKEN=7907909261:AAFTVrpSpIDNL8CiB5dKnqrlJvB81x-4oDs
+TELEGRAM_TOKEN=seu_token_do_botfather_aqui
 
 # Google Sheets Integration
 SHEET_ID=15fe9HZQ0m8i5HOkCpk6Es4s-jTjtJ4djdtrVsONW2ro
