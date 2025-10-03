@@ -130,7 +130,7 @@ cp .env.example .env
 TELEGRAM_TOKEN=seu_token_do_botfather_aqui
 
 # Google Sheets Integration
-SHEET_ID=15fe9HZQ0m8i5HOkCpk6Es4s-jTjtJ4djdtrVsONW2ro
+SHEET_ID=sua_planilha_id_aqui
 
 # Server Configuration
 PORT=8000
