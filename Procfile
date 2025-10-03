@@ -1,1 +1,1 @@
-web: python dashboard_completo.py
+web: python server.py
