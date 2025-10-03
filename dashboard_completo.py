@@ -345,22 +345,22 @@ def dashboard():
                         <div class="stat-change" id="changeAtual"></div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-icon">📊</div>
-                        <div class="stat-value" id="mediaMovel">R$ 0,00</div>
-                        <div class="stat-label">Média Móvel (3 meses)</div>
-                        <div class="stat-change" id="changeMedia"></div>
+                        <div class="stat-icon">🎯</div>
+                        <div class="stat-value" id="restanteMeta">R$ 0,00</div>
+                        <div class="stat-label">Restante da Meta</div>
+                        <div class="stat-change" id="changeRestante"></div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-icon">📈</div>
-                        <div class="stat-value" id="projecao">R$ 0,00</div>
-                        <div class="stat-label">Projeção do Mês</div>
-                        <div class="stat-change" id="changeProjecao"></div>
+                        <div class="stat-icon">📅</div>
+                        <div class="stat-value" id="ultimos7Dias">R$ 0,00</div>
+                        <div class="stat-label">Últimos 7 Dias</div>
+                        <div class="stat-change" id="change7Dias"></div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-icon">💰</div>
-                        <div class="stat-value" id="economia">R$ 0,00</div>
-                        <div class="stat-label">Economia Possível</div>
-                        <div class="stat-change" id="changeEconomia"></div>
+                        <div class="stat-icon">🏆</div>
+                        <div class="stat-value" id="maiorGasto">R$ 0,00</div>
+                        <div class="stat-label">Maior Gasto Individual</div>
+                        <div class="stat-change" id="changeMaior"></div>
                     </div>
                 </div>
                 
@@ -449,15 +449,15 @@ def dashboard():
             
             function updateStats() {
                 document.getElementById('gastoAtual').textContent = `R$ ${currentData.gastoAtual.toFixed(2)}`;
-                document.getElementById('mediaMovel').textContent = `R$ ${currentData.mediaMovel.toFixed(2)}`;
-                document.getElementById('projecao').textContent = `R$ ${currentData.projecao.toFixed(2)}`;
-                document.getElementById('economia').textContent = `R$ ${currentData.economiaPossivel.toFixed(2)}`;
+                document.getElementById('restanteMeta').textContent = `R$ ${currentData.restanteMeta.toFixed(2)}`;
+                document.getElementById('ultimos7Dias').textContent = `R$ ${currentData.ultimos7Dias.toFixed(2)}`;
+                document.getElementById('maiorGasto').textContent = `R$ ${currentData.maiorGasto.toFixed(2)}`;
                 
                 // Mudanças percentuais
                 updateChange('changeAtual', currentData.changeAtual);
-                updateChange('changeMedia', currentData.changeMedia);
-                updateChange('changeProjecao', currentData.changeProjecao);
-                updateChange('changeEconomia', currentData.changeEconomia);
+                updateChange('changeRestante', currentData.changeRestante);
+                updateChange('change7Dias', currentData.change7Dias);
+                updateChange('changeMaior', currentData.changeMaior);
             }
             
             function updateChange(elementId, change) {
@@ -613,7 +613,10 @@ def dashboard():
 @app.route("/api/complete-data")
 def complete_data():
     """API completa com todas as análises"""
-    global sheet
+    print("🔄 Usando SheetsService do bot...")
+    
+    if not sheets_service.is_connected():
+        return jsonify({'error': 'SheetsService não conectado'}), 500
     
     print("🔄 Iniciando complete_data...")
     
@@ -673,13 +676,15 @@ def complete_data():
         # Cálculos básicos
         gasto_atual = sum(float(str(g.get('Valor', '0')).replace(',', '.')) for g in gastos_periodo)
         
-        # Média móvel (últimos 3 meses)
-        media_movel = calcular_media_movel(gastos, 3)
+        # Meta mensal
+        meta_mensal = config.get('meta_mensal', 2000)
+        restante_meta = max(0, meta_mensal - gasto_atual)
         
-        # Projeção do mês
-        dia_atual = hoje.day
-        dias_no_mes = calendar.monthrange(hoje.year, hoje.month)[1]
-        projecao = (gasto_atual / dia_atual) * dias_no_mes if dia_atual > 0 else 0
+        # Gastos últimos 7 dias
+        ultimos_7_dias = calcular_ultimos_7_dias(gastos)
+        
+        # Maior gasto individual do mês
+        maior_gasto = max([float(str(g.get('Valor', '0')).replace(',', '.')) for g in gastos_periodo], default=0)
         
         # Categorias
         categorias = {}
@@ -701,13 +706,13 @@ def complete_data():
         insights = gerar_insights(gastos, gastos_periodo, categorias)
         
         # Mudanças percentuais (comparação com mês anterior)
-        changes = calcular_mudancas(gastos, gasto_atual, media_movel, projecao)
+        changes = calcular_mudancas_novas(gastos, gasto_atual, restante_meta, ultimos_7_dias, maior_gasto)
         
         return jsonify({
             'gastoAtual': gasto_atual,
-            'mediaMovel': media_movel,
-            'projecao': projecao,
-            'economiaPossivel': max(0, gasto_atual * 0.15),  # 15% de economia possível
+            'restanteMeta': restante_meta,
+            'ultimos7Dias': ultimos_7_dias,
+            'maiorGasto': maior_gasto,
             'categorias': categorias,
             'evolucaoMensal': evolucao_mensal,
             'gastosPorDia': gastos_por_dia,
@@ -715,9 +720,9 @@ def complete_data():
             'insights': insights,
             'planilhaLink': f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/edit",
             'changeAtual': changes['atual'],
-            'changeMedia': changes['media'],
-            'changeProjecao': changes['projecao'],
-            'changeEconomia': changes['economia']
+            'changeRestante': changes['restante'],
+            'change7Dias': changes['dias7'],
+            'changeMaior': changes['maior']
         })
         
     except Exception as e:
@@ -873,8 +878,21 @@ def gerar_insights(gastos, gastos_periodo, categorias):
         'padraoGastos': padrao_gastos
     }
 
-def calcular_mudancas(gastos, gasto_atual, media_movel, projecao):
-    """Calcula mudanças percentuais com dados reais"""
+def calcular_ultimos_7_dias(gastos):
+    """Calcula gastos dos últimos 7 dias"""
+    hoje = datetime.now()
+    total_7_dias = 0
+    
+    for i in range(7):
+        data = hoje - timedelta(days=i)
+        data_str = data.strftime('%d/%m/%Y')
+        gastos_dia = [g for g in gastos if data_str in str(g.get('Data', ''))]
+        total_7_dias += sum(float(str(g.get('Valor', '0')).replace(',', '.')) for g in gastos_dia)
+    
+    return total_7_dias
+
+def calcular_mudancas_novas(gastos, gasto_atual, restante_meta, ultimos_7_dias, maior_gasto):
+    """Calcula mudanças percentuais com as novas métricas"""
     hoje = datetime.now()
     mes_anterior = (hoje.replace(day=1) - timedelta(days=1)).strftime("%m/%Y")
     
@@ -882,17 +900,25 @@ def calcular_mudancas(gastos, gasto_atual, media_movel, projecao):
     gastos_mes_anterior = [g for g in gastos if mes_anterior in str(g.get('Data', ''))]
     gasto_anterior = sum(float(str(g.get('Valor', '0')).replace(',', '.')) for g in gastos_mes_anterior)
     
-    # Calcular mudanças reais
+    # Calcular mudanças
     change_atual = ((gasto_atual - gasto_anterior) / gasto_anterior * 100) if gasto_anterior > 0 else 0
-    change_media = ((media_movel - gasto_anterior) / gasto_anterior * 100) if gasto_anterior > 0 else 0
-    change_projecao = ((projecao - gasto_anterior) / gasto_anterior * 100) if gasto_anterior > 0 else 0
-    change_economia = 15.0  # Economia sempre possível
+    
+    # Para restante da meta (positivo = bom, negativo = ruim)
+    change_restante = (restante_meta / 2000 * 100) - 50  # Baseado na meta padrão
+    
+    # Para 7 dias (comparar com média semanal do mês anterior)
+    media_semanal_anterior = gasto_anterior / 4 if gasto_anterior > 0 else 0
+    change_7_dias = ((ultimos_7_dias - media_semanal_anterior) / media_semanal_anterior * 100) if media_semanal_anterior > 0 else 0
+    
+    # Para maior gasto (comparar com maior do mês anterior)
+    maior_anterior = max([float(str(g.get('Valor', '0')).replace(',', '.')) for g in gastos_mes_anterior], default=0)
+    change_maior = ((maior_gasto - maior_anterior) / maior_anterior * 100) if maior_anterior > 0 else 0
     
     return {
         'atual': change_atual,
-        'media': change_media,
-        'projecao': change_projecao,
-        'economia': change_economia
+        'restante': change_restante,
+        'dias7': change_7_dias,
+        'maior': change_maior
     }
 
 @app.route("/api/update-meta", methods=['POST'])
