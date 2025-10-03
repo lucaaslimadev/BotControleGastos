@@ -35,12 +35,16 @@ try:
     
     print("🌐 Conectando com Google Sheets...")
     print(f"📊 Credenciais: {len(GOOGLE_CREDENTIALS)} caracteres")
+    print(f"📊 SHEET_ID COMPLETO: {SHEET_ID}")
     
     creds_info = json.loads(GOOGLE_CREDENTIALS)
+    print(f"🔑 Service Account Email: {creds_info.get('client_email', 'N/A')}")
+    
     creds = Credentials.from_service_account_info(creds_info,
         scopes=["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"])
     
     gc = gspread.authorize(creds)
+    print(f"🔍 Tentando abrir planilha: {SHEET_ID}")
     sheet = gc.open_by_key(SHEET_ID).sheet1
     
     # Testar conexão
