@@ -925,4 +925,18 @@ def backup():
 
 if __name__ == "__main__":
     print(f"🌐 Dashboard iniciando em http://localhost:{PORT}")
+    
+    # Iniciar bot em thread separada para Railway
+    import threading
+    import subprocess
+    import sys
+    
+    def start_bot():
+        subprocess.run([sys.executable, 'bot_completo.py'])
+    
+    # Iniciar bot em background
+    bot_thread = threading.Thread(target=start_bot, daemon=True)
+    bot_thread.start()
+    
+    # Iniciar dashboard
     app.run(host='0.0.0.0', port=PORT, debug=False)
